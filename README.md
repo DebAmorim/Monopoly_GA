@@ -15,9 +15,9 @@ Each value used in this simulation can be set in de `config.js` file.
 -Pay rent
 -Bankrupcy
 -Pay taxes
+-Full set
 
 ## Game Mechanics That May Be Implemented In The Future
--Full set
 -Metro Station
 -Go to jail
 -Luck cards

@@ -32,6 +32,16 @@ class Classification:
         self.properties = properties
         self.profile = profile
 
+class colors:
+    RESET = '\033[0m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    PURPLE = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+
 '''
 Functions - utils
 
@@ -39,6 +49,7 @@ Functions - utils
 
 import random
 import json
+from prettytable import PrettyTable
 
 def load_config(filename):
     with open(filename, 'r') as file:
@@ -66,14 +77,24 @@ def pay_rent(player, property, players):
         player.coins -= property.rent_price
         property.owner.coins += property.rent_price
     else:
-        active_players = [player for player in players if not player.bankrupt]
-        classifications.append(Classification(player.coins, len(active_players), player.properties, player.profile))
+        declare_bankruptcy(player, players, property)
+
+def declare_bankruptcy(player, players, property):
+    active_players = [player for player in players if not player.bankrupt]
+    classifications.append(Classification(player.coins, len(active_players), player.properties, player.profile))
+    if property.owner != None:
         property.owner.coins += player.coins
-        player.coins = 0
-        player.bankrupt = True
-        print(f"Bankrupt: {player.profile}")
-        for property in player.properties:
-            property.owner = None
+    player.coins = 0
+    player.bankrupt = True
+    print(f"Bankrupt: {player.profile}")
+    for property in player.properties:
+        property.owner = None
+
+def pay_income_tax(player, property, players):
+    if player.coins >= property.rent_price:
+        player.coins -= property.rent_price
+    else:
+        declare_bankruptcy(player, players, property)
         
 def update_classification(players):
     player_balances = [(get_player_balance(player), player) for player in players]
@@ -105,6 +126,12 @@ def check_full_turn(old_position, new_position, player):
     if new_position < old_position:
         player.coins += config['full_turn_coins']
 
+def check_income_tax(position, board, player, players):
+    if board.properties[position].name == 'Imposto de Renda':
+        print(f"pagou imposto")
+        return True
+    return False
+
 '''
 Functions - game
 
@@ -115,9 +142,14 @@ def execute_round(player, board, players):
         old_position = player.position
         player.position = (player.position + roll_dices()) % len(board.properties)
         new_position = player.position
-        check_full_turn(old_position, new_position, player)
         property = board.properties[player.position]
-        if property.owner is None:
+
+        check_full_turn(old_position, new_position, player)
+
+        if check_income_tax(new_position, board, player, players):
+            pay_income_tax(player, property, players)
+
+        elif property.owner == None:
             if player.profile == 'cautious' and player.coins - property.buy_price >= config['cautious_remaining_balance']:
                 buy_property(player, property)
             elif player.profile == 'impulsive':
@@ -139,11 +171,7 @@ def execute_match(profiles):
         for player in players:
             execute_round(player, board, players)
             vencedor = check_winner(players, round)
-            if vencedor:
-                for property in board.properties:
-                    if property.owner != None:
-                        print(f"Winner's property: {property.buy_price}, owner: {property.owner.profile}")
-                        
+            if vencedor:                        
                 return vencedor
 
 def play():
@@ -153,9 +181,14 @@ def play():
 
         for classification in classifications:
             print()
-            print(f'Position: {classification.position}, Profile: {classification.profile}, Coins: {classification.coins}, Properties: ')
+            print(colors.BLUE + f'{classification.position} - {classification.profile}, Coins: {classification.coins}\nProperties: ' + colors.RESET)
+
+            table = PrettyTable()
+            table.field_names = [f"{colors.GREEN}Color{colors.RESET}", f"{colors.GREEN}Name{colors.RESET}", f"{colors.GREEN}Rent Price{colors.RESET}", f"{colors.GREEN}Buy Price{colors.RESET}"]
+
             for property in classification.properties:
-                print(f"Property: price: {property.buy_price}, rent: {property.rent_price}")
+                table.add_row([property.color, property.name, property.rent_price, property.buy_price])
+            print(table)
     return classifications
 
 

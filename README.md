@@ -10,4 +10,18 @@ At first we have 4 profiles:
 
 Each value used in this simulation can be set in de `config.js` file.
 
+## Game Mechanics Implemented
+-Buy property
+-Pay rent
+-Bankrupcy
+-Pay taxes
+
+## Game Mechanics That May Be Implemented In The Future
+-Full set
+-Metro Station
+-Go to jail
+-Luck cards
+-Safe cards
+-Banker
+
 Soon a Genetic Algorithm will be implemented to simulated another player.

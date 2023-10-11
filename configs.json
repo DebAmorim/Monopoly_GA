@@ -9,6 +9,7 @@
     "properties": [
         {"rentPrice": 6, "buy_price": 60, "owner": null, "color": "brown", "name": "Av. Sumaré" },
         {"rentPrice": 6, "buy_price": 60, "owner": null, "color": "brown", "name": "Praça da Sé" },
+        {"rentPrice": 200, "buy_price": null, "owner": null, "color": null, "name": "Imposto de Renda" },
         {"rentPrice": 10, "buy_price": 100, "owner": null, "color": "light_blue", "name": "Rua 25 de Março" },
         {"rentPrice": 10, "buy_price": 100, "owner": null, "color": "light_blue", "name": "Av. São João" },
         {"rentPrice": 10, "buy_price": 120, "owner": null, "color": "light_blue", "name": "Av. Paulista" },

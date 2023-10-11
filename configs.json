@@ -2,7 +2,7 @@
     "saldo_inicial": 200,
     "saldo_restante_cauteloso": 64,
     "numero_rodadas": 300,
-    "numero_simulacoes": 500,
+    "numero_simulacoes": 1,
     "valor_completar_volta": 100,
     "aluguel_exigente": 20,
 

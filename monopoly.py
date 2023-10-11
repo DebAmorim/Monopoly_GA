@@ -4,18 +4,19 @@ Classes
 '''
 
 class Property:
-    def __init__(self, buy_price, rent_price, color, name):
+    def __init__(self, buy_price, rent_price, color, name, full_set):
         self.buy_price = buy_price
         self.rent_price = rent_price
         self.color = color
         self.name = name
         self.owner = None
+        self.full_set = full_set
 
 class Board:
     def __init__(self, config):
         self.properties = []
         for property in properties:
-            self.properties.append(Property(property['buy_price'], property['rentPrice'], property['color'], property['name']))
+            self.properties.append(Property(property['buy_price'], property['rentPrice'], property['color'], property['name'], property['full_set']))
 
 class Player:
     def __init__(self, profile):
@@ -58,11 +59,12 @@ def load_config(filename):
 def roll_dices():
     return random.randint(1, 6) + random.randint(1, 6)
 
-def buy_property(player, property):
+def buy_property(player, property, properties):
     if player.coins >= property.buy_price:
         player.coins -= property.buy_price
         player.properties.append(property)
         property.owner = player
+        check_full_set(property, properties)
         return True
     return False
 
@@ -73,9 +75,12 @@ def get_player_balance(player):
     return balance
 
 def pay_rent(player, property, players):
-    if player.coins >= property.rent_price:
-        player.coins -= property.rent_price
-        property.owner.coins += property.rent_price
+    total_rent = property.rent_price
+    if property.full_set:
+        total_rent = total_rent * 2
+    if player.coins >= total_rent:
+        player.coins -= total_rent
+        property.owner.coins += total_rent
     else:
         declare_bankruptcy(player, players, property)
 
@@ -89,6 +94,7 @@ def declare_bankruptcy(player, players, property):
     print(f"Bankrupt: {player.profile}")
     for property in player.properties:
         property.owner = None
+        property.full_set = False
 
 def pay_income_tax(player, property, players):
     if player.coins >= property.rent_price:
@@ -128,9 +134,33 @@ def check_full_turn(old_position, new_position, player):
 
 def check_income_tax(position, board, player, players):
     if board.properties[position].name == 'Imposto de Renda':
-        print(f"pagou imposto")
+        print(f"paid income tax")
         return True
     return False
+
+def check_full_set(property, properties):
+    #getting all the same color properties
+    same_color_properties = []
+    for prop in properties:
+        if prop.color == property.color:
+            same_color_properties.append(prop)
+
+    #getting all the same owner properties
+    same_owner_properties = []
+    for prop in same_color_properties:
+        if prop.owner == property.owner:
+            same_owner_properties.append(prop)
+
+    #checking if all the properties of same color has the same owner, if so, then it's a full set
+    if len(same_color_properties) == len(same_owner_properties):
+        for prop in properties:
+            if prop.owner == property.owner and prop.color == property.color:
+                prop.full_set = True
+        print(f"It's a FULL SET")
+        return True
+    else:
+        print(f"It's NOT a full set")
+        return False
 
 '''
 Functions - game
@@ -151,13 +181,13 @@ def execute_round(player, board, players):
 
         elif property.owner == None:
             if player.profile == 'cautious' and player.coins - property.buy_price >= config['cautious_remaining_balance']:
-                buy_property(player, property)
+                buy_property(player, property, board.properties)
             elif player.profile == 'impulsive':
-                buy_property(player, property)
+                buy_property(player, property, board.properties)
             elif player.profile == 'random' and random.choice([True, False]):
-                buy_property(player, property)
+                buy_property(player, property, board.properties)
             elif player.profile == 'demmanding' and property.rent_price >= config['demmanding_rent']:
-                buy_property(player, property)
+                buy_property(player, property, board.properties)
             
         elif property.owner != player:
             pay_rent(player, property, players)

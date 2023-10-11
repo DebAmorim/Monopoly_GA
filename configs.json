@@ -1,0 +1,32 @@
+{
+    "saldo_inicial": 200,
+    "saldo_restante_cauteloso": 64,
+    "numero_rodadas": 300,
+    "numero_simulacoes": 500,
+    "valor_completar_volta": 100,
+    "aluguel_exigente": 20,
+
+    "propriedades": [
+        {"rentPrice": 6, "buy_price": 60, "owner": null},
+        {"rentPrice": 6, "buy_price": 60, "owner": null},
+        {"rentPrice": 10, "buy_price": 100, "owner": null},
+        {"rentPrice": 10, "buy_price": 100, "owner": null},
+        {"rentPrice": 12, "buy_price": 120, "owner": null},
+        {"rentPrice": 14, "buy_price": 140, "owner": null},
+        {"rentPrice": 14, "buy_price": 140, "owner": null},
+        {"rentPrice": 16, "buy_price": 160, "owner": null},
+        {"rentPrice": 18, "buy_price": 180, "owner": null},
+        {"rentPrice": 18, "buy_price": 180, "owner": null},
+        {"rentPrice": 20, "buy_price": 200, "owner": null},
+        {"rentPrice": 22, "buy_price": 220, "owner": null},
+        {"rentPrice": 22, "buy_price": 220, "owner": null},
+        {"rentPrice": 24, "buy_price": 240, "owner": null},
+        {"rentPrice": 26, "buy_price": 260, "owner": null},
+        {"rentPrice": 26, "buy_price": 260, "owner": null},
+        {"rentPrice": 28, "buy_price": 280, "owner": null},
+        {"rentPrice": 30, "buy_price": 300, "owner": null},
+        {"rentPrice": 30, "buy_price": 300, "owner": null},
+        {"rentPrice": 32, "buy_price": 320, "owner": null}
+    ]
+
+}

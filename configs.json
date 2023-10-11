@@ -4,7 +4,7 @@
     "number_of_rounds": 300,
     "number_of_matches": 1,
     "full_turn_coins": 10,
-    "demmanding_rent": 20,
+    "demmanding_rent": 16,
 
     "properties": [
         {"full_set": null, "rentPrice": 2, "buy_price": 60, "owner": null, "color": "brown", "name": "Av. Sumaré" },

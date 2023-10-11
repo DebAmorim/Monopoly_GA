@@ -51,6 +51,21 @@ Functions - utils
 import random
 import json
 from prettytable import PrettyTable
+import logging
+import datetime
+import os
+
+now = datetime.datetime.now()
+date_time = now.strftime("%Y%m%d_%H%M%S")
+file_name = f'execution_{date_time}.log'
+path = os.path.dirname(os.path.abspath(__file__))
+log_path = os.path.join(path, 'logs')
+complete_path = os.path.join(log_path, file_name)
+
+if not os.path.exists(log_path):
+    os.makedirs(log_path)
+
+logging.basicConfig(filename=complete_path, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def load_config(filename):
     with open(filename, 'r') as file:
@@ -64,6 +79,8 @@ def buy_property(player, property, properties):
         player.coins -= property.buy_price
         player.properties.append(property)
         property.owner = player
+        logging.warning(f"{player.profile} bought property: {property.name} | Coins available: {player.coins}")
+        # print(f"{player.profile} bought property: {property.name} | Coins available: {player.coins}")
         check_full_set(property, properties)
         return True
     return False
@@ -74,15 +91,69 @@ def get_player_balance(player):
         balance += property.buy_price
     return balance
 
+def make_coins_transfer(total, payer, receiver):
+    payer.coins -= total
+    receiver.coins -= total
+    logging.debug(f"{receiver.profile} received {total} from {payer.profile} | Coins available: {receiver.coins}")
+    # print(f"{receiver.profile} received {total} from {payer.profile} | Coins available: {receiver.coins}")
+
+def sell_properties(property, properties, player, debt):
+    logging.warning(f"{player.profile} is selling properties to pay a debt of {debt}:")
+    # print(f"{player.profile} is selling properties to pay a debt of {debt}:")
+    remaining_amount_to_pay = debt - player.coins
+    properties_available = []
+
+    #separating properties considering if part of a full set or not
+    #because sell a full set property is not the best option
+    not_full_set_properties = []
+    full_set_properties = []
+    for prop in player.properties:
+        if prop.full_set:
+            full_set_properties.append(prop)
+        else:
+            not_full_set_properties.append(prop)
+
+    #sorting properties to sell the less valuable first
+    sorted_full_set_properties = sorted(full_set_properties, key=lambda x: x.buy_price)
+    sorted_not_full_set_properties = sorted(not_full_set_properties, key=lambda x: x.buy_price)
+        
+    if len(sorted_not_full_set_properties) > 0:
+        for prop in sorted_not_full_set_properties:
+            properties_available.append(prop)
+    if len(sorted_full_set_properties) > 0:
+        for prop in sorted_full_set_properties:
+            properties_available.append(prop)
+    
+    #will be avilable to sale the quantity necessary to pay de debt
+    properties_to_sale = []
+    enough_amount = 0
+    for prop in properties_available:
+        properties_to_sale.append(prop)
+        prop.full_set = False
+        prop.owner = None
+        player.properties.remove(prop)
+        enough_amount += prop.buy_price
+        logging.warning(f"sold property: {prop.name}, price: {prop.buy_price}")
+        # print(f"sold property: {prop.name}, price: {prop.buy_price}")
+        if enough_amount >= remaining_amount_to_pay:
+            break
+
 def pay_rent(player, property, players):
     total_rent = property.rent_price
     if property.full_set:
         total_rent = total_rent * 2
+    logging.warning(f"{player.profile} has to pay rent({total_rent}) for {property.owner.profile} | Coins before paying: {player.coins}")
+    # print(f"{player.profile} has to pay rent({total_rent}) for {property.owner.profile} | Coins before paying: {player.coins}")
     if player.coins >= total_rent:
-        player.coins -= total_rent
-        property.owner.coins += total_rent
+        make_coins_transfer(total_rent, player, property.owner)
+        # player.coins -= total_rent
+        # property.owner.coins += total_rent
     else:
-        declare_bankruptcy(player, players, property)
+        if len(player.properties) > 0 and get_player_balance(player) > total_rent:
+            make_coins_transfer(player.coins, player, property.owner)
+            sell_properties(property, properties, player, total_rent)
+        else:
+            declare_bankruptcy(player, players, property)
 
 def declare_bankruptcy(player, players, property):
     active_players = [player for player in players if not player.bankrupt]
@@ -91,16 +162,24 @@ def declare_bankruptcy(player, players, property):
         property.owner.coins += player.coins
     player.coins = 0
     player.bankrupt = True
-    print(f"Bankrupt: {player.profile}")
+    logging.error(f"Bankrupt: {player.profile}, coins: {player.coins}")
+    # print(f"Bankrupt: {player.profile}, coins: {player.coins}")
     for property in player.properties:
         property.owner = None
         property.full_set = False
 
 def pay_income_tax(player, property, players):
+    logging.warning(f"{player.profile} has to pay income tax ({property.rent_price}) | Coins before paying: {player.coins}")
+    # print(f"{player.profile} has to pay income tax ({property.rent_price}) | Coins before paying: {player.coins}")
     if player.coins >= property.rent_price:
         player.coins -= property.rent_price
     else:
-        declare_bankruptcy(player, players, property)
+        if len(player.properties) > 0 and get_player_balance(player) > property.rent_price:
+            player.coins = 0
+            sell_properties(property, properties, player, property.rent_price)
+        else:
+            declare_bankruptcy(player, players, property)
+
         
 def update_classification(players):
     player_balances = [(get_player_balance(player), player) for player in players]
@@ -122,7 +201,8 @@ def check_winner(players, round):
         classifications.append(Classification(active_palyers[0].coins, 1, active_palyers[0].properties, active_palyers[0].profile))
         return active_palyers[0]
     elif config['number_of_rounds']-1 == round:
-        print(f"Time out - active players: {len(active_palyers)}")
+        logging.error(f"Time out - active players: {len(active_palyers)}")
+        # print(f"Time out - active players: {len(active_palyers)}")
         update_classification(active_palyers)
         return get_winner()
 
@@ -131,10 +211,11 @@ def check_winner(players, round):
 def check_full_turn(old_position, new_position, player):
     if new_position < old_position:
         player.coins += config['full_turn_coins']
+        logging.debug(f"{player.profile} received coins for full turn ({config['full_turn_coins']}) | Coins available: {player.coins} ")
+        # print(f"{player.profile} received coins for full turn ({config['full_turn_coins']}) | Coins available: {player.coins} ")
 
 def check_income_tax(position, board, player, players):
     if board.properties[position].name == 'Imposto de Renda':
-        print(f"paid income tax")
         return True
     return False
 
@@ -156,10 +237,12 @@ def check_full_set(property, properties):
         for prop in properties:
             if prop.owner == property.owner and prop.color == property.color:
                 prop.full_set = True
-        print(f"It's a FULL SET")
+        logging.info(f"It's a FULL SET")
+        # print(f"It's a FULL SET")
         return True
     else:
-        print(f"It's NOT a full set")
+        logging.info(f"It's NOT a full set")
+        # print(f"It's NOT a full set")
         return False
 
 '''
@@ -173,6 +256,8 @@ def execute_round(player, board, players):
         player.position = (player.position + roll_dices()) % len(board.properties)
         new_position = player.position
         property = board.properties[player.position]
+        logging.info(f"{player.profile} is at {property.name} | Coins available {player.coins}")
+        # print(f"{player.profile} is at {property.name} | Coins available {player.coins}")
 
         check_full_turn(old_position, new_position, player)
 
@@ -180,13 +265,13 @@ def execute_round(player, board, players):
             pay_income_tax(player, property, players)
 
         elif property.owner == None:
-            if player.profile == 'cautious' and player.coins - property.buy_price >= config['cautious_remaining_balance']:
+            if player.profile == 'CAUTIOUS' and player.coins - property.buy_price >= config['cautious_remaining_balance']:
                 buy_property(player, property, board.properties)
-            elif player.profile == 'impulsive':
+            elif player.profile == 'IMPULSIVE':
                 buy_property(player, property, board.properties)
-            elif player.profile == 'random' and random.choice([True, False]):
+            elif player.profile == 'RANDOM' and random.choice([True, False]):
                 buy_property(player, property, board.properties)
-            elif player.profile == 'demmanding' and property.rent_price >= config['demmanding_rent']:
+            elif player.profile == 'DEMMANDING' and property.rent_price >= config['demmanding_rent']:
                 buy_property(player, property, board.properties)
             
         elif property.owner != player:
@@ -213,12 +298,18 @@ def play():
             print()
             print(colors.BLUE + f'{classification.position} - {classification.profile}, Coins: {classification.coins}\nProperties: ' + colors.RESET)
 
+            logging.info('')
+            logging.info(f'{classification.position} - {classification.profile}, Coins: {classification.coins}\nProperties: ') 
+
             table = PrettyTable()
             table.field_names = [f"{colors.GREEN}Color{colors.RESET}", f"{colors.GREEN}Name{colors.RESET}", f"{colors.GREEN}Rent Price{colors.RESET}", f"{colors.GREEN}Buy Price{colors.RESET}"]
+            table_log = PrettyTable()
+            table_log.field_names = ["Color", "Name", "Rent Price", "Buy Price"]
 
             for property in classification.properties:
                 table.add_row([property.color, property.name, property.rent_price, property.buy_price])
             print(table)
+            logging.info(table_log)
     return classifications
 
 
@@ -230,7 +321,7 @@ Declarations
 classifications = []
 config = load_config('configs.json')
 properties = config['properties']
-profiles = ['cautious', 'impulsive', 'random', 'demmanding']
+profiles = ['CAUTIOUS', 'IMPULSIVE', 'RANDOM', 'DEMMANDING']
 
 play()
 

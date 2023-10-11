@@ -1,14 +1,21 @@
+'''
+Classes
+
+'''
+
 class Property:
-    def __init__(self, buy_price, rent_price):
+    def __init__(self, buy_price, rent_price, color, name):
         self.buy_price = buy_price
         self.rent_price = rent_price
+        self.color = color
+        self.name = name
         self.owner = None
 
 class Board:
     def __init__(self, config):
         self.properties = []
         for property in properties:
-            self.properties.append(Property(property['buy_price'], property['rentPrice']))
+            self.properties.append(Property(property['buy_price'], property['rentPrice'], property['color'], property['name']))
 
 class Player:
     def __init__(self, profile):
@@ -25,7 +32,17 @@ class Classification:
         self.properties = properties
         self.profile = profile
 
+'''
+Functions - utils
+
+'''
+
 import random
+import json
+
+def load_config(filename):
+    with open(filename, 'r') as file:
+        return json.load(file)
 
 def roll_dices():
     return random.randint(1, 6) + random.randint(1, 6)
@@ -38,6 +55,11 @@ def buy_property(player, property):
         return True
     return False
 
+def get_player_balance(player):
+    balance = player.coins
+    for property in player.properties:
+        balance += property.buy_price
+    return balance
 
 def pay_rent(player, property, players):
     if player.coins >= property.rent_price:
@@ -53,13 +75,6 @@ def pay_rent(player, property, players):
         for property in player.properties:
             property.owner = None
         
-
-def get_player_balance(player):
-    balance = player.coins
-    for property in player.properties:
-        balance += property.buy_price
-    return balance
-
 def update_classification(players):
     player_balances = [(get_player_balance(player), player) for player in players]
 
@@ -84,18 +99,16 @@ def check_winner(players, round):
         update_classification(active_palyers)
         return get_winner()
 
-        # for player in players:
-        #     if get_player_balance(player) > get_player_balance(jogador_vitorioso):
-        #         if jogador_vitorioso != None:
-        #             classifications.append(Classification(player.coins, 1, player.properties, player.profile))
-        #             classifications.append(Classification(jogador_vitorioso.coins, 2, jogador_vitorioso.properties, jogador_vitorioso.profile))
-        #         jogador_vitorioso = player
-        # return jogador_vitorioso
     return None
 
 def check_full_turn(old_position, new_position, player):
     if new_position < old_position:
         player.coins += config['full_turn_coins']
+
+'''
+Functions - game
+
+'''
 
 def execute_round(player, board, players):
     if not player.bankrupt:
@@ -116,7 +129,6 @@ def execute_round(player, board, players):
             
         elif property.owner != player:
             pay_rent(player, property, players)
-
 
 def execute_match(profiles):
     board = Board(config['properties'])
@@ -146,17 +158,17 @@ def play():
                 print(f"Property: price: {property.buy_price}, rent: {property.rent_price}")
     return classifications
 
-import json
 
-def load_config(filename):
-    with open(filename, 'r') as file:
-        return json.load(file)
-    
+'''
+Declarations
+
+'''
+
 classifications = []
 config = load_config('configs.json')
 properties = config['properties']
-
 profiles = ['cautious', 'impulsive', 'random', 'demmanding']
+
 play()
 
 

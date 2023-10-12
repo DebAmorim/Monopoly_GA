@@ -72,7 +72,10 @@ def load_config(filename):
         return json.load(file)
 
 def roll_dices():
-    return random.randint(1, 6) + random.randint(1, 6)
+    total_moviments = 0
+    for dice in range(config['number_of_dices']):
+        total_moviments +=  random.randint(1, 6)
+    return total_moviments
 
 def buy_property(player, property, properties):
     if player.coins >= property.buy_price:
@@ -100,7 +103,6 @@ def make_coins_transfer(total, payer, receiver):
 def sell_properties(property, properties, player, debt):
     logging.warning(f"{player.profile} is selling properties to pay a debt of {debt}:")
     # print(f"{player.profile} is selling properties to pay a debt of {debt}:")
-    remaining_amount_to_pay = debt - player.coins
     properties_available = []
 
     #separating properties considering if part of a full set or not
@@ -126,22 +128,24 @@ def sell_properties(property, properties, player, debt):
     
     #will be avilable to sale the quantity necessary to pay de debt
     properties_to_sale = []
-    enough_amount = 0
     for prop in properties_available:
         properties_to_sale.append(prop)
         prop.full_set = False
         prop.owner = None
         player.properties.remove(prop)
-        enough_amount += prop.buy_price
+        #property values decrease in mortgage
+        player.coins += prop.buy_price/2
         logging.warning(f"sold property: {prop.name}, price: {prop.buy_price}")
-        # print(f"sold property: {prop.name}, price: {prop.buy_price}")
-        if enough_amount >= remaining_amount_to_pay:
+        logging.warning(f"Player Coins {player.coins}")
+        if player.coins >= debt:
+            player.coins -= debt
+            logging.warning(f"Player coins after payment: {player.coins}")
             break
 
 def pay_rent(player, property, players, classifications):
-    total_rent = property.rent_price
+    total_rent = property.rent_price * config['rent_base_value_modifier']
     if property.full_set:
-        total_rent = total_rent * 4
+        total_rent = total_rent * config['rent_full_set_modifier']
     logging.warning(f"{player.profile} has to pay rent({total_rent}) for {property.owner.profile} | Coins before paying: {player.coins}")
     # print(f"{player.profile} has to pay rent({total_rent}) for {property.owner.profile} | Coins before paying: {player.coins}")
     if player.coins >= total_rent:
@@ -175,7 +179,6 @@ def pay_income_tax(player, property, players, classifications):
         player.coins -= property.rent_price
     else:
         if len(player.properties) > 0 and get_player_balance(player) > property.rent_price:
-            player.coins = 0
             sell_properties(property, properties, player, property.rent_price)
         else:
             declare_bankruptcy(player, players, property, classifications)
@@ -380,7 +383,7 @@ def play(coeficients):
 
 
         GA_classification = 0
-        GA_classification = get_player_balance(GA_player) + 1000 * (5 - GA_position + 1)
+        GA_classification = 1000 * (5 - GA_position + 1) #+get_player_balance(GA_player)
 
         print(f"GA profile: {GA_player.profile}")
         print(f"GA balance: {get_player_balance(GA_player)}")
@@ -399,8 +402,9 @@ Declarations
 config = load_config('configs.json')
 properties = config['properties']
 profiles = ['CAUTIOUS', 'IMPULSIVE', 'RANDOM', 'DEMMANDING', 'GA']
-coeficients =  [0.06238748151428131, -0.8748660672523614, 0.541391288860267, -0.7737519404849391]
+coeficients = [-0.4423979378600249, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808]
 
-play(coeficients)
+
+# play(coeficients)
 
 

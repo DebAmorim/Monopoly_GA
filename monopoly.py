@@ -138,7 +138,7 @@ def sell_properties(property, properties, player, debt):
         logging.warning(f"sold property: {prop.name}, price: {prop.buy_price}")
         logging.warning(f"Player Coins {player.coins}")
         if player.coins >= debt:
-            player.coins -= debt
+            # player.coins -= debt
             logging.warning(f"Player coins after payment: {player.coins}")
             break
 
@@ -153,9 +153,9 @@ def pay_rent(player, property, players, classifications):
         # player.coins -= total_rent
         # property.owner.coins += total_rent
     else:
-        if len(player.properties) > 0 and get_player_balance(player) > total_rent:
-            make_coins_transfer(player.coins, player, property.owner)
+        if len(player.properties) > 0:
             sell_properties(property, properties, player, total_rent)
+            pay_rent(player, property, players, classifications)
         else:
             declare_bankruptcy(player, players, property, classifications)
 
@@ -180,6 +180,7 @@ def pay_income_tax(player, property, players, classifications):
     else:
         if len(player.properties) > 0 and get_player_balance(player) > property.rent_price:
             sell_properties(property, properties, player, property.rent_price)
+            pay_income_tax(player, property, players, classifications)
         else:
             declare_bankruptcy(player, players, property, classifications)
 
@@ -264,7 +265,7 @@ def decide_to_buy(player, property, coeficients):
         min_remaining_balance = 1
 
     min_rent_price = 0
-    if property.rent_price >= config['demmanding_rent']:
+    if property.rent_price >= abs(coeficients[4]*config['demmanding_rent']):
         min_rent_price = 1
 
     impulsivity = 1
@@ -297,15 +298,13 @@ def execute_round(player, board, players, coeficients, classifications):
             pay_income_tax(player, property, players, classifications)
 
         elif property.owner == None:
-            if player.profile == 'CAUTIOUS' and player.coins - property.buy_price >= config['cautious_remaining_balance']:
+            if player.profile == 'GA0' and decide_to_buy(player, property, coeficients[0]):
                 buy_property(player, property, board.properties)
-            elif player.profile == 'IMPULSIVE':
+            elif player.profile == 'GA1'and decide_to_buy(player, property, coeficients[1]):
                 buy_property(player, property, board.properties)
-            elif player.profile == 'RANDOM' and random.choice([True, False]):
+            elif player.profile == 'GA2' and decide_to_buy(player, property, coeficients[2]):
                 buy_property(player, property, board.properties)
-            elif player.profile == 'DEMMANDING' and property.rent_price >= config['demmanding_rent']:
-                buy_property(player, property, board.properties)
-            elif player.profile == 'GA' and decide_to_buy(player, property, coeficients):
+            elif player.profile == 'GA3' and decide_to_buy(player, property, coeficients[3]):
                 buy_property(player, property, board.properties)
             
         elif property.owner != player:
@@ -326,9 +325,7 @@ def execute_match(profiles, coeficients, classifications):
             execute_round(player, board, players, coeficients, classifications)
             vencedor = check_winner(players, round, classifications)
             if vencedor:                        
-                for player in players:
-                    if player.profile == 'GA':
-                        return player
+                return vencedor
 
 def play(coeficients):
 
@@ -354,9 +351,8 @@ def play(coeficients):
     classifications = []
     for _ in range(config['number_of_matches']):
         classifications = []
-        GA_player = execute_match(profiles, coeficients, classifications)
-        GA_position = 0
-
+        execute_match(profiles, coeficients, classifications)
+        
         logging.info('')
         logging.info("######################### CLASSIFICATIONS #############################")
         for classification in classifications:
@@ -374,20 +370,16 @@ def play(coeficients):
                 table.add_row([property.color, property.name, property.rent_price, property.buy_price])
                 logging.info(f"{property.color} - {property.name} - rent: { property.rent_price}")
             print(table)
-            if classification.profile == "GA":
-                GA_position = classification.position
+            if classification.profile == "GA0":
+                GA0_position = 4 - classification.position + 1
+            if classification.profile == "GA1":
+                GA1_position = 4 - classification.position + 1
+            if classification.profile == "GA2":
+                GA2_position = 4 - classification.position + 1
+            if classification.profile == "GA3":
+                GA3_position = 4 - classification.position + 1
                 
-        
-        
-            
-
-
-        GA_classification = 0
-        GA_classification = 1000 * (5 - GA_position + 1) #+get_player_balance(GA_player)
-
-        print(f"GA profile: {GA_player.profile}")
-        print(f"GA balance: {get_player_balance(GA_player)}")
-        print(f"GA position: {GA_position}")
+        GA_classification = [GA0_position, GA1_position, GA2_position, GA3_position]
 
     print(GA_classification)
     return GA_classification
@@ -398,11 +390,14 @@ Declarations
 
 '''
 
-# classifications = []
 config = load_config('configs.json')
 properties = config['properties']
-profiles = ['CAUTIOUS', 'IMPULSIVE', 'RANDOM', 'DEMMANDING', 'GA']
-coeficients = [-0.4423979378600249, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808]
+profiles = ['GA0', 'GA1', 'GA2', 'GA3']
+coeficients = []
+coeficients.append([-0.4, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808])
+coeficients.append([-0.5, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808])
+coeficients.append([-0.6, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808])
+coeficients.append([-0.7, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808])
 
 
 # play(coeficients)

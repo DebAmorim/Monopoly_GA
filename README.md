@@ -25,3 +25,11 @@ Each value used in this simulation can be set in de `config.js` file.
 -Banker
 
 Soon a Genetic Algorithm will be implemented to simulated another player.
+
+
+### How to use this repo:
+-install python 3
+-install pip
+-clone de repository
+-`pip install -r requirements.txt`
+-run python3 ga.py

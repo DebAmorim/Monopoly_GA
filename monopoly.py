@@ -314,6 +314,11 @@ def execute_match(profiles, coeficients):
     random.shuffle(players)
 
     for round in range(config['number_of_rounds']):
+
+        logging.info('')
+        logging.info(f"ROUND NUMBER {round}")
+        logging.info('')
+
         for player in players:
             execute_round(player, board, players, coeficients)
             vencedor = check_winner(players, round)
@@ -332,7 +337,7 @@ def play(coeficients):
     logging.info(f"FULL_TURN_COINS: {config['full_turn_coins']}")
     logging.info(f"DEMMANDING_RENT: {config['demmanding_rent']}")
     logging.info('')
-    logging.info(f"GA PARAMETERS:")
+    logging.info(f"GA PARAMETERS (USED IN THIS MATCH):")
     logging.info(f"MIN_RENT: {config['demmanding_rent']}")
     logging.info(f"REMAINING_BALANCE: {config['cautious_remaining_balance']}")
     logging.info(f"COEFICIENT 0: {coeficients[0]}")
@@ -347,12 +352,12 @@ def play(coeficients):
         GA_player = execute_match(profiles, coeficients)
         GA_position = 0
 
+        logging.info("######################### CLASSIFICATIONS #############################")
         for classification in classifications:
             print()
             print(colors.BLUE + f'{classification.position} - {classification.profile}, Coins: {classification.coins}\nProperties: ' + colors.RESET)
 
             logging.info('')
-            logging.info("######################################################")
             logging.info(f'{classification.position} - {classification.profile}, Coins: {classification.coins}\nProperties: ') 
 
             table = PrettyTable()

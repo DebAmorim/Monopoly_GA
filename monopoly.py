@@ -100,7 +100,6 @@ def make_coins_transfer(total, payer, receiver):
 def sell_properties(property, properties, player, debt):
     logging.warning(f"{player.profile} is selling properties to pay a debt of {debt}:")
     # print(f"{player.profile} is selling properties to pay a debt of {debt}:")
-    remaining_amount_to_pay = debt - player.coins
     properties_available = []
 
     #separating properties considering if part of a full set or not
@@ -126,16 +125,17 @@ def sell_properties(property, properties, player, debt):
     
     #will be avilable to sale the quantity necessary to pay de debt
     properties_to_sale = []
-    enough_amount = 0
     for prop in properties_available:
         properties_to_sale.append(prop)
         prop.full_set = False
         prop.owner = None
         player.properties.remove(prop)
-        enough_amount += prop.buy_price
+        player.coins += prop.buy_price
         logging.warning(f"sold property: {prop.name}, price: {prop.buy_price}")
-        # print(f"sold property: {prop.name}, price: {prop.buy_price}")
-        if enough_amount >= remaining_amount_to_pay:
+        logging.warning(f"Player Coins {player.coins}")
+        if player.coins >= debt:
+            player.coins -= debt
+            logging.warning(f"Player coins after payment: {player.coins}")
             break
 
 def pay_rent(player, property, players, classifications):
@@ -175,7 +175,6 @@ def pay_income_tax(player, property, players, classifications):
         player.coins -= property.rent_price
     else:
         if len(player.properties) > 0 and get_player_balance(player) > property.rent_price:
-            player.coins = 0
             sell_properties(property, properties, player, property.rent_price)
         else:
             declare_bankruptcy(player, players, property, classifications)

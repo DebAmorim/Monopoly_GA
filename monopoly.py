@@ -57,7 +57,7 @@ import os
 
 now = datetime.datetime.now()
 date_time = now.strftime("%Y%m%d_%H%M%S")
-file_name = f'execution_{date_time}.log'
+file_name = f'simulation_{date_time}.log'
 path = os.path.dirname(os.path.abspath(__file__))
 log_path = os.path.join(path, 'logs')
 complete_path = os.path.join(log_path, file_name)
@@ -138,7 +138,7 @@ def sell_properties(property, properties, player, debt):
         if enough_amount >= remaining_amount_to_pay:
             break
 
-def pay_rent(player, property, players):
+def pay_rent(player, property, players, classifications):
     total_rent = property.rent_price
     if property.full_set:
         total_rent = total_rent * 4
@@ -153,9 +153,9 @@ def pay_rent(player, property, players):
             make_coins_transfer(player.coins, player, property.owner)
             sell_properties(property, properties, player, total_rent)
         else:
-            declare_bankruptcy(player, players, property)
+            declare_bankruptcy(player, players, property, classifications)
 
-def declare_bankruptcy(player, players, property):
+def declare_bankruptcy(player, players, property, classifications):
     active_players = [player for player in players if not player.bankrupt]
     classifications.append(Classification(player.coins, len(active_players), player.properties, player.profile))
     if property.owner != None:
@@ -168,7 +168,7 @@ def declare_bankruptcy(player, players, property):
         property.owner = None
         property.full_set = False
 
-def pay_income_tax(player, property, players):
+def pay_income_tax(player, property, players, classifications):
     logging.warning(f"{player.profile} has to pay income tax ({property.rent_price}) | Coins before paying: {player.coins}")
     # print(f"{player.profile} has to pay income tax ({property.rent_price}) | Coins before paying: {player.coins}")
     if player.coins >= property.rent_price:
@@ -178,10 +178,10 @@ def pay_income_tax(player, property, players):
             player.coins = 0
             sell_properties(property, properties, player, property.rent_price)
         else:
-            declare_bankruptcy(player, players, property)
+            declare_bankruptcy(player, players, property, classifications)
 
         
-def update_classification(players):
+def update_classification(players, classifications):
     player_balances = [(get_player_balance(player), player) for player in players]
 
     player_balances.sort(reverse=True, key=lambda x: x[0])
@@ -190,12 +190,12 @@ def update_classification(players):
         classification = Classification(balance, i, player.properties, player.profile)
         classifications.append(classification)
 
-def get_winner():
+def get_winner(classifications):
     for classification in classifications:
         if classification.position == 1:
             return classification.profile
 
-def check_winner(players, round):
+def check_winner(players, round, classifications):
     active_palyers = [player for player in players if not player.bankrupt]
     if len(active_palyers) == 1:
         classifications.append(Classification(active_palyers[0].coins, 1, active_palyers[0].properties, active_palyers[0].profile))
@@ -203,8 +203,8 @@ def check_winner(players, round):
     elif config['number_of_rounds']-1 == round:
         logging.error(f"Time out - active players: {len(active_palyers)}")
         # print(f"Time out - active players: {len(active_palyers)}")
-        update_classification(active_palyers)
-        return get_winner()
+        update_classification(active_palyers, classifications)
+        return get_winner(classifications)
 
     return None
 
@@ -279,7 +279,7 @@ Functions - game
 
 '''
 
-def execute_round(player, board, players, coeficients):
+def execute_round(player, board, players, coeficients, classifications):
     if not player.bankrupt:
         old_position = player.position
         player.position = (player.position + roll_dices()) % len(board.properties)
@@ -291,7 +291,7 @@ def execute_round(player, board, players, coeficients):
         check_full_turn(old_position, new_position, player)
 
         if check_income_tax(new_position, board, player, players):
-            pay_income_tax(player, property, players)
+            pay_income_tax(player, property, players, classifications)
 
         elif property.owner == None:
             if player.profile == 'CAUTIOUS' and player.coins - property.buy_price >= config['cautious_remaining_balance']:
@@ -306,9 +306,9 @@ def execute_round(player, board, players, coeficients):
                 buy_property(player, property, board.properties)
             
         elif property.owner != player:
-            pay_rent(player, property, players)
+            pay_rent(player, property, players, classifications)
 
-def execute_match(profiles, coeficients):
+def execute_match(profiles, coeficients, classifications):
     board = Board(config['properties'])
     players = [Player(profile) for profile in profiles]
     random.shuffle(players)
@@ -320,8 +320,8 @@ def execute_match(profiles, coeficients):
         logging.info('')
 
         for player in players:
-            execute_round(player, board, players, coeficients)
-            vencedor = check_winner(players, round)
+            execute_round(player, board, players, coeficients, classifications)
+            vencedor = check_winner(players, round, classifications)
             if vencedor:                        
                 for player in players:
                     if player.profile == 'GA':
@@ -348,10 +348,13 @@ def play(coeficients):
     logging.info('')
     logging.info('')
 
+    classifications = []
     for _ in range(config['number_of_matches']):
-        GA_player = execute_match(profiles, coeficients)
+        classifications = []
+        GA_player = execute_match(profiles, coeficients, classifications)
         GA_position = 0
 
+        logging.info('')
         logging.info("######################### CLASSIFICATIONS #############################")
         for classification in classifications:
             print()
@@ -392,12 +395,12 @@ Declarations
 
 '''
 
-classifications = []
+# classifications = []
 config = load_config('configs.json')
 properties = config['properties']
 profiles = ['CAUTIOUS', 'IMPULSIVE', 'RANDOM', 'DEMMANDING', 'GA']
-coeficients = [0.5, 0.5, 0.5, 0.5]
+coeficients =  [0.06238748151428131, -0.8748660672523614, 0.541391288860267, -0.7737519404849391]
 
-# play(coeficients)
+play(coeficients)
 
 

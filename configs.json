@@ -2,7 +2,7 @@
     "initial_coins": 200,
     "cautious_remaining_balance": 50,
     "number_of_rounds": 300,
-    "number_of_matches": 1,
+    "number_of_matches": 10,
     "full_turn_coins": 50,
     "demmanding_rent": 16,
 

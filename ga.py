@@ -90,21 +90,6 @@ def genetic_algorithm(epochs, population_size, resolution, base, acceptable_valu
         logging.info(f"{ranked_current_solutions[population_size - 1]}")
         print(ranked_current_solutions[population_size - 1])
         
-        # condition to stop
-        # logging.info('')
-        # logging.info(f'Reached stop condition?')
-        # logging.info('')
-        # logging.info(f'Best solution for current epoch: {ranked_solutions[population_size - 1][1]}')
-        # logging.info(f'Last elected solution: {last_best_solution}')
-        # if ranked_solutions[population_size - 1][0] >= acceptable_value:
-        #     if ranked_solutions[population_size - 1][1] == last_best_solution:
-        #         count_same_best += 1
-        #         logging.info(f'Consecutive wins: {count_same_best}')
-        #         if count_same_best >= consecutive_epochs:
-        #             logging.info('YES')
-        #             break
-        # logging.info('NO')
-
 
         # condition to stop
         tolerance = 1e-4  # Defina a tolerância conforme necessário
@@ -220,6 +205,8 @@ def genetic_algorithm(epochs, population_size, resolution, base, acceptable_valu
 
         logging.info('')
         logging.info(f'New generation after elitism:\n {solutions}')
+        logging.info('')
+        logging.info(f"ENDING: EPOCH {current_epoch+1}")
         logging.info('')
 
     logging.info('')

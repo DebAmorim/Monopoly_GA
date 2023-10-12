@@ -1,10 +1,14 @@
 {
-    "initial_coins": 200,
-    "cautious_remaining_balance": 50,
+    "initial_coins": 500,
+    "cautious_remaining_balance": 100,
     "number_of_rounds": 300,
     "number_of_matches": 10,
     "full_turn_coins": 50,
     "demmanding_rent": 16,
+    "rent_base_value_modifier": 2,
+    "rent_full_set_modifier": 5,
+    "number_of_dices": 1,
+
 
     "properties": [
         {"full_set": null, "rentPrice": 2, "buy_price": 60, "owner": null, "color": "brown", "name": "Av. Sumaré" },
@@ -23,6 +27,7 @@
         {"full_set": null, "rentPrice": 18, "buy_price": 220, "owner": null, "color": "red", "name": "Leblon" },
         {"full_set": null, "rentPrice": 20, "buy_price": 240, "owner": null, "color": "red", "name": "Copacabana" },
         {"full_set": null, "rentPrice": 22, "buy_price": 260, "owner": null, "color": "yellow", "name": "Av. Cidade Jardim" },
+        {"full_set": null, "rentPrice": 100, "buy_price": null, "owner": null, "color": null, "name": "Imposto de Renda" },
         {"full_set": null, "rentPrice": 22, "buy_price": 260, "owner": null, "color": "yellow", "name": "Pacaembu" },
         {"full_set": null, "rentPrice": 24, "buy_price": 280, "owner": null, "color": "yellow", "name": "Ibirapuera" },
         {"full_set": null, "rentPrice": 26, "buy_price": 300, "owner": null, "color": "green", "name": "Barra da Tijuca" },

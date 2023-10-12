@@ -141,7 +141,7 @@ def sell_properties(property, properties, player, debt):
 def pay_rent(player, property, players):
     total_rent = property.rent_price
     if property.full_set:
-        total_rent = total_rent * 2
+        total_rent = total_rent * 4
     logging.warning(f"{player.profile} has to pay rent({total_rent}) for {property.owner.profile} | Coins before paying: {player.coins}")
     # print(f"{player.profile} has to pay rent({total_rent}) for {property.owner.profile} | Coins before paying: {player.coins}")
     if player.coins >= total_rent:
@@ -245,12 +245,41 @@ def check_full_set(property, properties):
         # print(f"It's NOT a full set")
         return False
 
+def decide_to_buy(player, property, coeficients):
+    remaining_balance = player.coins - property.buy_price
+
+    #Checking if the property to buy has the same color of one the player already has
+    same_color = 0
+    for prop in player.properties:
+        if prop.color == property.color:
+            same_color = 1
+            break
+
+    
+    min_remaining_balance = 0
+    if remaining_balance>=config['cautious_remaining_balance']:
+        min_remaining_balance = 1
+
+    min_rent_price = 0
+    if property.rent_price >= config['demmanding_rent']:
+        min_rent_price = 1
+
+    impulsivity = 1
+
+    decision = coeficients[0]*(min_remaining_balance) + coeficients[1]*(min_rent_price) + coeficients[2]*(same_color) + coeficients[3]*impulsivity
+    if decision > 0:
+        return True
+    else:
+        return False
+
+
+
 '''
 Functions - game
 
 '''
 
-def execute_round(player, board, players):
+def execute_round(player, board, players, coeficients):
     if not player.bankrupt:
         old_position = player.position
         player.position = (player.position + roll_dices()) % len(board.properties)
@@ -273,44 +302,84 @@ def execute_round(player, board, players):
                 buy_property(player, property, board.properties)
             elif player.profile == 'DEMMANDING' and property.rent_price >= config['demmanding_rent']:
                 buy_property(player, property, board.properties)
+            elif player.profile == 'GA' and decide_to_buy(player, property, coeficients):
+                buy_property(player, property, board.properties)
             
         elif property.owner != player:
             pay_rent(player, property, players)
 
-def execute_match(profiles):
+def execute_match(profiles, coeficients):
     board = Board(config['properties'])
     players = [Player(profile) for profile in profiles]
     random.shuffle(players)
 
     for round in range(config['number_of_rounds']):
         for player in players:
-            execute_round(player, board, players)
+            execute_round(player, board, players, coeficients)
             vencedor = check_winner(players, round)
             if vencedor:                        
-                return vencedor
+                for player in players:
+                    if player.profile == 'GA':
+                        return player
 
-def play():
+def play(coeficients):
+
+    logging.info("######################################################")
+    logging.info(f"MATCH PARAMETERS:")
+    logging.info(f"INITIAL_COINS: {config['initial_coins']}")
+    logging.info(f"CAUTIOUS_REMAINING_BALANCE: {config['cautious_remaining_balance']}")
+    logging.info(f"MAX_ROUNDS: {config['number_of_rounds']}")
+    logging.info(f"FULL_TURN_COINS: {config['full_turn_coins']}")
+    logging.info(f"DEMMANDING_RENT: {config['demmanding_rent']}")
+    logging.info('')
+    logging.info(f"GA PARAMETERS:")
+    logging.info(f"MIN_RENT: {config['demmanding_rent']}")
+    logging.info(f"REMAINING_BALANCE: {config['cautious_remaining_balance']}")
+    logging.info(f"COEFICIENT 0: {coeficients[0]}")
+    logging.info(f"COEFICIENT 1: {coeficients[1]}")
+    logging.info(f"COEFICIENT 2: {coeficients[2]}")
+    logging.info(f"COEFICIENT 3: {coeficients[3]}")
+    logging.info("######################################################")
+    logging.info('')
+    logging.info('')
 
     for _ in range(config['number_of_matches']):
-        execute_match(profiles)
+        GA_player = execute_match(profiles, coeficients)
+        GA_position = 0
 
         for classification in classifications:
             print()
             print(colors.BLUE + f'{classification.position} - {classification.profile}, Coins: {classification.coins}\nProperties: ' + colors.RESET)
 
             logging.info('')
+            logging.info("######################################################")
             logging.info(f'{classification.position} - {classification.profile}, Coins: {classification.coins}\nProperties: ') 
 
             table = PrettyTable()
             table.field_names = [f"{colors.GREEN}Color{colors.RESET}", f"{colors.GREEN}Name{colors.RESET}", f"{colors.GREEN}Rent Price{colors.RESET}", f"{colors.GREEN}Buy Price{colors.RESET}"]
-            table_log = PrettyTable()
-            table_log.field_names = ["Color", "Name", "Rent Price", "Buy Price"]
+            
 
             for property in classification.properties:
                 table.add_row([property.color, property.name, property.rent_price, property.buy_price])
+                logging.info(f"{property.color} - {property.name} - rent: { property.rent_price}")
             print(table)
-            logging.info(table_log)
-    return classifications
+            if classification.profile == "GA":
+                GA_position = classification.position
+                
+        
+        
+            
+
+
+        GA_classification = 0
+        GA_classification = get_player_balance(GA_player) + 1000 * (5 - GA_position + 1)
+
+        print(f"GA profile: {GA_player.profile}")
+        print(f"GA balance: {get_player_balance(GA_player)}")
+        print(f"GA position: {GA_position}")
+
+    print(GA_classification)
+    return GA_classification
 
 
 '''
@@ -321,8 +390,9 @@ Declarations
 classifications = []
 config = load_config('configs.json')
 properties = config['properties']
-profiles = ['CAUTIOUS', 'IMPULSIVE', 'RANDOM', 'DEMMANDING']
+profiles = ['CAUTIOUS', 'IMPULSIVE', 'RANDOM', 'DEMMANDING', 'GA']
+coeficients = [0.5, 0.5, 0.5, 0.5]
 
-play()
+# play(coeficients)
 
 

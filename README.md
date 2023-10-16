@@ -40,11 +40,12 @@ This is an implementation of Monopoly Board Game to simulate strategy would be b
 ## GA against pre-set profiles
 
 At first we have 4 profiles:
--Cautious: only buys a property if his remaining balance is equal or greater than a value;
--Demmanding: only buys the property if his rental value is superior to a certain value;
--Impulsive: if he has coins enough, buys the property;
--Random: decides randomly to buy or not a property.
--GA: 
+- Cautious: only buys a property if his remaining balance is equal or greater than a value;
+- Demmanding: only buys the property if his rental value is superior to a certain value;
+- Impulsive: if he has coins enough, buys the property;
+- Random: decides randomly to buy or not a property.
+- GA:
+
 ## GA against ga
 
 This implementation of Monopoly also supports simulations where the players (5) are all GA.
@@ -62,27 +63,27 @@ The GA player has coeficients to evaluate 4 parameters of monopoly:
 - impulsivity
 ## Game Mechanics Implemented
 
--Buy property
--Pay rent
--Bankrupcy
--Pay taxes
--Full set
+- Buy property
+- Pay rent
+- Bankrupcy
+- Pay taxes
+- Full set
 ## Game Mechanics That May Be Implemented In The Future
 
--Metro Station
--Go to jail
--Luck cards
--Safe cards
--Banker
+- Metro Station
+- Go to jail
+- Luck cards
+- Safe cards
+- Banker
 
 ### How to
 
--install python 3
--install pip
--clone repository
--`pip install -r requirements.txt`
--run python3 ga_against_ga.py
--run python3 ga_against_profiles.py
+- install python 3
+- install pip
+- clone repository
+- `pip install -r requirements.txt`
+- run python3 ga_against_ga.py
+- run python3 ga_against_profiles.py
 
 After that you should take a look at the logs folder.
 ## License

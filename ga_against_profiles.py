@@ -8,16 +8,20 @@ import logging
 import datetime
 import os
 
+
+
+
 epochs = 1000
-population_size = 4
-resolution = 5
+population_size = 10
+resolution = 4
 base = 1
-acceptable_value = 4
+acceptable_value = 5000
 crossover_rate = 0.6
 beta = 0.2
 mutation_rate = 0.2
 elitism_size = 1
 consecutive_epochs = 5
+n_players_per_match = 1
 
 logging.info('')
 logging.info(f"PARAMETERS OF SIMULATION")
@@ -37,7 +41,7 @@ def genetic_algorithm(epochs, population_size, resolution, base, acceptable_valu
     # create first generation
     logging.info("Creating the first generation")
     current_solutions = []
-    last_best_solution = [-2,-2,-2,-2,-2]
+    last_best_solution = [-2,-2,-2,-2]
     count_same_best = 0
     for _ in range(population_size):
         to_add = []
@@ -53,44 +57,71 @@ def genetic_algorithm(epochs, population_size, resolution, base, acceptable_valu
         
         # apply fitness function
         logging.info('')
-        logging.info(f"EPOCH: {current_epoch+1} - Applying fitness function (Play monopoly)")
+        logging.info(f"Applying fitness function (Play monopoly)")
         logging.info('')
+        solution_idx = 0
         ranked_current_solutions = []
+        for solution in current_solutions:
 
-        result = play(current_solutions)
+            solution_idx += 1
+            logging.info('')
+            logging.info(f"SIMULATION: EPOCH {current_epoch+1} - SOLUTION {solution_idx}")
+            logging.info('')
 
-        print("RESULTADO: ")
-        print(result)
-        print("\n")
+            resultarray = play(solution, n_players_per_match)
+            result = resultarray[0]
+            print("RESULTADO: ")
+            print(result)
+            print("\n")
 
-        for index in range(population_size):
-            ranked_current_solutions.append((result[index],current_solutions[index]))
+            logging.info('')
+            logging.info(f"Applyed solution: {solution} - Result: {result}")
 
+            ranked_current_solutions.append((result,solution))
+
+        logging.info('Ranked solutions:')
+        for solution in ranked_current_solutions:
+            logging.info(f"{solution}")
+        
         ranked_current_solutions = sorted(ranked_current_solutions, key=lambda x: x[0])
-        logging.info('EPOCH: {current_epoch+1} - Sorted ranked solutions:')
+        logging.info('Sorted ranked solutions:')
         for solution in ranked_current_solutions:
             logging.info(f"{solution}")
         
         # show best result
-        logging.info(f"EPOCH: {current_epoch+1} - BEST SOLUTION")
         logging.info('')
+        logging.info(f"GENERATION {current_epoch + 1} BEST SOLUTIONS")
+        logging.info('')
+        # logging.info('BEST SOLUTION:')
         logging.info(f"{ranked_current_solutions[population_size - 1]}")
         print(ranked_current_solutions[population_size - 1])
         
 
         # condition to stop
-        tolerance = 1e-4  # Defina a tolerância conforme necessário
+        tolerance = 1e-4 
         logging.info('')
         logging.info(f'Reached stop condition?')
         logging.info('')
-        
+        logging.info(f'Best solution for current epoch: {ranked_current_solutions[population_size - 1][1]}')
+        logging.info(f'Last elected solution: {last_best_solution}')
+        logging.info(f'Resultado do all: {all(abs(a - b) < tolerance for a, b in zip(ranked_current_solutions[population_size - 1][1], last_best_solution))}')
+        logging.info('')
+        logging.info(f"Diffs")
+        logging.info(f"{ranked_current_solutions[population_size - 1][1][0]-last_best_solution[0]}")
+        logging.info(f"{ranked_current_solutions[population_size - 1][1][1]-last_best_solution[1]}")
+        logging.info(f"{ranked_current_solutions[population_size - 1][1][2]-last_best_solution[2]}")
+        logging.info(f"{ranked_current_solutions[population_size - 1][1][3]-last_best_solution[3]}")
+        logging.info('')
+        logging.info(f"Tolerance: {tolerance}")
+
+        print(f" isso é o que estou acessando {ranked_current_solutions[population_size - 1][0]}")
+
         if ranked_current_solutions[population_size - 1][0] >= acceptable_value:
             if all(abs(a - b) < tolerance for a, b in zip(ranked_current_solutions[population_size - 1][1], last_best_solution)):
                 count_same_best += 1
                 logging.info(f'Consecutive best: {count_same_best}')
                 if count_same_best >= consecutive_epochs-1:
                     logging.info('YES')
-                    logging.info(f'FINAL EPOCH: {current_epoch+1}')
                     break
             else:
                 last_best_solution = ranked_current_solutions[population_size - 1][1]

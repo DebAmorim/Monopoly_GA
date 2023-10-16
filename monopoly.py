@@ -83,7 +83,6 @@ def buy_property(player, property, properties):
         player.properties.append(property)
         property.owner = player
         logging.warning(f"{player.profile} bought property: {property.name} | Coins available: {player.coins}")
-        # print(f"{player.profile} bought property: {property.name} | Coins available: {player.coins}")
         check_full_set(property, properties)
         return True
     return False
@@ -98,11 +97,9 @@ def make_coins_transfer(total, payer, receiver):
     payer.coins -= total
     receiver.coins -= total
     logging.debug(f"{receiver.profile} received {total} from {payer.profile} | Coins available: {receiver.coins}")
-    # print(f"{receiver.profile} received {total} from {payer.profile} | Coins available: {receiver.coins}")
-
+    
 def sell_properties(property, properties, player, debt):
     logging.warning(f"{player.profile} is selling properties to pay a debt of {debt}:")
-    # print(f"{player.profile} is selling properties to pay a debt of {debt}:")
     properties_available = []
 
     #separating properties considering if part of a full set or not
@@ -147,11 +144,8 @@ def pay_rent(player, property, players, classifications):
     if property.full_set:
         total_rent = total_rent * config['rent_full_set_modifier']
     logging.warning(f"{player.profile} has to pay rent({total_rent}) for {property.owner.profile} | Coins before paying: {player.coins}")
-    # print(f"{player.profile} has to pay rent({total_rent}) for {property.owner.profile} | Coins before paying: {player.coins}")
     if player.coins >= total_rent:
         make_coins_transfer(total_rent, player, property.owner)
-        # player.coins -= total_rent
-        # property.owner.coins += total_rent
     else:
         if len(player.properties) > 0:
             sell_properties(property, properties, player, total_rent)
@@ -167,14 +161,12 @@ def declare_bankruptcy(player, players, property, classifications):
     player.coins = 0
     player.bankrupt = True
     logging.error(f"Bankrupt: {player.profile}, coins: {player.coins}")
-    # print(f"Bankrupt: {player.profile}, coins: {player.coins}")
     for property in player.properties:
         property.owner = None
         property.full_set = False
 
 def pay_income_tax(player, property, players, classifications):
     logging.warning(f"{player.profile} has to pay income tax ({property.rent_price}) | Coins before paying: {player.coins}")
-    # print(f"{player.profile} has to pay income tax ({property.rent_price}) | Coins before paying: {player.coins}")
     if player.coins >= property.rent_price:
         player.coins -= property.rent_price
     else:
@@ -183,7 +175,6 @@ def pay_income_tax(player, property, players, classifications):
             pay_income_tax(player, property, players, classifications)
         else:
             declare_bankruptcy(player, players, property, classifications)
-
         
 def update_classification(players, classifications):
     player_balances = [(get_player_balance(player), player) for player in players]
@@ -206,7 +197,6 @@ def check_winner(players, round, classifications):
         return active_palyers[0]
     elif config['number_of_rounds']-1 == round:
         logging.error(f"Time out - active players: {len(active_palyers)}")
-        # print(f"Time out - active players: {len(active_palyers)}")
         update_classification(active_palyers, classifications)
         return get_winner(classifications)
 
@@ -216,8 +206,7 @@ def check_full_turn(old_position, new_position, player):
     if new_position < old_position:
         player.coins += config['full_turn_coins']
         logging.debug(f"{player.profile} received coins for full turn ({config['full_turn_coins']}) | Coins available: {player.coins} ")
-        # print(f"{player.profile} received coins for full turn ({config['full_turn_coins']}) | Coins available: {player.coins} ")
-
+        
 def check_income_tax(position, board, player, players):
     if board.properties[position].name == 'Imposto de Renda':
         return True
@@ -242,14 +231,18 @@ def check_full_set(property, properties):
             if prop.owner == property.owner and prop.color == property.color:
                 prop.full_set = True
         logging.info(f"It's a FULL SET")
-        # print(f"It's a FULL SET")
         return True
     else:
         logging.info(f"It's NOT a full set")
-        # print(f"It's NOT a full set")
         return False
 
 def decide_to_buy(player, property, coeficients):
+
+    #coeficients[0] - same color
+    #coeficients[1] - remaining balance
+    #coeficients[2] - min rent price
+    #coeficients[3] - impulsivity
+
     remaining_balance = player.coins - property.buy_price
 
     #Checking if the property to buy has the same color of one the player already has
@@ -265,7 +258,7 @@ def decide_to_buy(player, property, coeficients):
         min_remaining_balance = 1
 
     min_rent_price = 0
-    if property.rent_price >= abs(coeficients[4]*config['demmanding_rent']):
+    if property.rent_price >= config['demmanding_rent']:
         min_rent_price = 1
 
     impulsivity = 1
@@ -275,7 +268,6 @@ def decide_to_buy(player, property, coeficients):
         return True
     else:
         return False
-
 
 
 '''
@@ -290,7 +282,6 @@ def execute_round(player, board, players, coeficients, classifications):
         new_position = player.position
         property = board.properties[player.position]
         logging.info(f"{player.profile} is at {property.name} | Coins available {player.coins}")
-        # print(f"{player.profile} is at {property.name} | Coins available {player.coins}")
 
         check_full_turn(old_position, new_position, player)
 
@@ -298,13 +289,15 @@ def execute_round(player, board, players, coeficients, classifications):
             pay_income_tax(player, property, players, classifications)
 
         elif property.owner == None:
-            if player.profile == 'GA0' and decide_to_buy(player, property, coeficients[0]):
+            if player.profile == 'GA0' or player.profile =='GA' and decide_to_buy(player, property, coeficients[0]):
                 buy_property(player, property, board.properties)
-            elif player.profile == 'GA1'and decide_to_buy(player, property, coeficients[1]):
+            elif player.profile == 'GA1' or player.profile =='CAUTIOUS' and decide_to_buy(player, property, coeficients[1]):
                 buy_property(player, property, board.properties)
-            elif player.profile == 'GA2' and decide_to_buy(player, property, coeficients[2]):
+            elif player.profile == 'GA2' or player.profile =='DEMMANDING' and decide_to_buy(player, property, coeficients[2]):
                 buy_property(player, property, board.properties)
-            elif player.profile == 'GA3' and decide_to_buy(player, property, coeficients[3]):
+            elif player.profile == 'GA3' or player.profile =='IMPULSIVE' and decide_to_buy(player, property, coeficients[3]):
+                buy_property(player, property, board.properties)
+            elif player.profile == 'GA4' or player.profile =='RANDOM' and decide_to_buy(player, property, coeficients[3]):
                 buy_property(player, property, board.properties)
             
         elif property.owner != player:
@@ -327,8 +320,11 @@ def execute_match(profiles, coeficients, classifications):
             if vencedor:                        
                 return vencedor
 
-def play(coeficients):
 
+def log_simulation_parameters_ga_against_profiles(coeficients):
+
+    logging.info(f"THIS IS A SIMULATION OF GA PLAYING AGAINST PRESET PROFILES")
+    logging.info('')
     logging.info("######################################################")
     logging.info(f"MATCH PARAMETERS:")
     logging.info(f"INITIAL_COINS: {config['initial_coins']}")
@@ -340,13 +336,61 @@ def play(coeficients):
     logging.info(f"GA PARAMETERS (USED IN THIS MATCH):")
     logging.info(f"MIN_RENT: {config['demmanding_rent']}")
     logging.info(f"REMAINING_BALANCE: {config['cautious_remaining_balance']}")
-    logging.info(f"COEFICIENT 0: {coeficients[0]}")
-    logging.info(f"COEFICIENT 1: {coeficients[1]}")
-    logging.info(f"COEFICIENT 2: {coeficients[2]}")
-    logging.info(f"COEFICIENT 3: {coeficients[3]}")
+    logging.info(f"COEFICIENT GA: {coeficients[0]}")
+    logging.info(f"COEFICIENT CAUTIOUS: {coeficients[1]}")
+    logging.info(f"COEFICIENT DEMMANDING: {coeficients[2]}")
+    logging.info(f"COEFICIENT IMPULSIVE: {coeficients[3]}")
+    logging.info(f"COEFICIENT RANDOM: {coeficients[4]}")
     logging.info("######################################################")
     logging.info('')
     logging.info('')
+
+def log_simulation_parameters_ga_against_ga(coeficients):
+    logging.info(f"THIS IS A SIMULATION OF GA PLAYING AGAINST GA")
+    logging.info('')
+    logging.info("######################################################")
+    logging.info(f"MATCH PARAMETERS:")
+    logging.info(f"INITIAL_COINS: {config['initial_coins']}")
+    logging.info(f"CAUTIOUS_REMAINING_BALANCE: {config['cautious_remaining_balance']}")
+    logging.info(f"MAX_ROUNDS: {config['number_of_rounds']}")
+    logging.info(f"FULL_TURN_COINS: {config['full_turn_coins']}")
+    logging.info(f"DEMMANDING_RENT: {config['demmanding_rent']}")
+    logging.info('')
+    logging.info(f"GA PARAMETERS (USED IN THIS MATCH):")
+    logging.info(f"MIN_RENT: {config['demmanding_rent']}")
+    logging.info(f"REMAINING_BALANCE: {config['cautious_remaining_balance']}")
+    logging.info(f"COEFICIENT GA0: {coeficients[0]}")
+    logging.info(f"COEFICIENT GA1: {coeficients[1]}")
+    logging.info(f"COEFICIENT GA2: {coeficients[2]}")
+    logging.info(f"COEFICIENT GA3: {coeficients[3]}")
+    logging.info(f"COEFICIENT GA4: {coeficients[4]}")
+    logging.info("######################################################")
+    logging.info('')
+    logging.info('')
+
+
+
+def play(received_coeficients, n_players_per_match):
+
+    coeficients = []
+    if n_players_per_match == 1:
+        profiles = ['GA', 'CAUTIOUS', 'DEMMANDING', 'IMPULSIVE', 'RANDOM']
+        coeficients.append(received_coeficients)
+        coeficients.append([0,1,0,0]) 
+        coeficients.append([1,0,1,0])
+        coeficients.append([0,0,0,1])
+        coeficients.append(
+            [random.uniform(-1, 1),
+             random.uniform(-1, 1),
+             random.uniform(-1, 1),
+             random.uniform(-1, 1)])
+        is_GA_against_GA = False
+        log_simulation_parameters_ga_against_profiles(coeficients)
+    else:
+        profiles = ['GA0', 'GA1', 'GA2', 'GA3', 'GA4']
+        coeficients = received_coeficients
+        is_GA_against_GA = True
+        log_simulation_parameters_ga_against_ga(coeficients)
 
     classifications = []
     for _ in range(config['number_of_matches']):
@@ -355,6 +399,13 @@ def play(coeficients):
         
         logging.info('')
         logging.info("######################### CLASSIFICATIONS #############################")
+        GA0_position = 0
+        GA1_position = 0
+        GA2_position = 0
+        GA3_position = 0
+        GA4_position = 0
+        GA_position = 0
+        GA_classification = []
         for classification in classifications:
             print()
             print(colors.BLUE + f'{classification.position} - {classification.profile}, Coins: {classification.coins}\nProperties: ' + colors.RESET)
@@ -370,18 +421,30 @@ def play(coeficients):
                 table.add_row([property.color, property.name, property.rent_price, property.buy_price])
                 logging.info(f"{property.color} - {property.name} - rent: { property.rent_price}")
             print(table)
-            if classification.profile == "GA0":
-                GA0_position = 4 - classification.position + 1
-            if classification.profile == "GA1":
-                GA1_position = 4 - classification.position + 1
-            if classification.profile == "GA2":
-                GA2_position = 4 - classification.position + 1
-            if classification.profile == "GA3":
-                GA3_position = 4 - classification.position + 1
-                
-        GA_classification = [GA0_position, GA1_position, GA2_position, GA3_position]
 
-    print(GA_classification)
+            if is_GA_against_GA:
+                if classification.profile == "GA0":
+                    GA0_position = 5 - classification.position + 1
+                if classification.profile == "GA1":
+                    GA1_position = 5 - classification.position + 1
+                if classification.profile == "GA2":
+                    GA2_position = 5 - classification.position + 1
+                if classification.profile == "GA3":
+                    GA3_position = 5 - classification.position + 1
+                if classification.profile == "GA4":
+                    GA4_position = 5 - classification.position + 1
+            else:
+                print(f"classification profile: {classification.profile} and classification position: {classification.position}")
+                if classification.profile == "GA":
+                    GA_position = 5 - classification.position + 1
+        if is_GA_against_GA: 
+            GA_classification = [GA0_position, GA1_position, GA2_position, GA3_position, GA4_position]
+        else:
+            GA_classification.append(GA_position)
+
+
+
+    print(f" esta é a ga classification {GA_classification}")
     return GA_classification
 
 
@@ -389,15 +452,10 @@ def play(coeficients):
 Declarations
 
 '''
-
 config = load_config('configs.json')
 properties = config['properties']
-profiles = ['GA0', 'GA1', 'GA2', 'GA3']
-coeficients = []
-coeficients.append([-0.4, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808])
-coeficients.append([-0.5, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808])
-coeficients.append([-0.6, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808])
-coeficients.append([-0.7, -0.2920284593027138, 0.26742416186514406, 0.01927448923416808])
+profiles = ['GA0', 'GA1', 'GA2', 'GA3', 'GA4']
+# coeficients = []
 
 
 # play(coeficients)

@@ -8,6 +8,9 @@ import logging
 import datetime
 import os
 
+
+
+
 epochs = 1000
 population_size = 10
 resolution = 4
@@ -18,6 +21,7 @@ beta = 0.2
 mutation_rate = 0.2
 elitism_size = 1
 consecutive_epochs = 5
+n_players_per_match = 1
 
 logging.info('')
 logging.info(f"PARAMETERS OF SIMULATION")
@@ -64,7 +68,8 @@ def genetic_algorithm(epochs, population_size, resolution, base, acceptable_valu
             logging.info(f"SIMULATION: EPOCH {current_epoch+1} - SOLUTION {solution_idx}")
             logging.info('')
 
-            result = play(solution)
+            resultarray = play(solution, n_players_per_match)
+            result = resultarray[0]
             print("RESULTADO: ")
             print(result)
             print("\n")
@@ -84,6 +89,7 @@ def genetic_algorithm(epochs, population_size, resolution, base, acceptable_valu
             logging.info(f"{solution}")
         
         # show best result
+        logging.info('')
         logging.info(f"GENERATION {current_epoch + 1} BEST SOLUTIONS")
         logging.info('')
         # logging.info('BEST SOLUTION:')
@@ -92,7 +98,7 @@ def genetic_algorithm(epochs, population_size, resolution, base, acceptable_valu
         
 
         # condition to stop
-        tolerance = 1e-4  # Defina a tolerância conforme necessário
+        tolerance = 1e-4 
         logging.info('')
         logging.info(f'Reached stop condition?')
         logging.info('')
@@ -107,6 +113,8 @@ def genetic_algorithm(epochs, population_size, resolution, base, acceptable_valu
         logging.info(f"{ranked_current_solutions[population_size - 1][1][3]-last_best_solution[3]}")
         logging.info('')
         logging.info(f"Tolerance: {tolerance}")
+
+        print(f" isso é o que estou acessando {ranked_current_solutions[population_size - 1][0]}")
 
         if ranked_current_solutions[population_size - 1][0] >= acceptable_value:
             if all(abs(a - b) < tolerance for a, b in zip(ranked_current_solutions[population_size - 1][1], last_best_solution)):
